@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Windup">
+  <!-- The mark: a brass cog on slate. Kept in sync with scripts/gen-icons.mjs,
+       which re-expresses these same shapes as its own primitives so the favicon
+       and the home-screen icons cannot drift into two different logos. The eight
+       teeth are one rect rotated by i*45 about the centre — the same rotational
+       symmetry the board generator is built on. -->
+  <rect width="64" height="64" rx="14" fill="#1b1f24"/>
+  <g fill="#d9a441">
+    <rect x="28" y="6" width="8" height="12" rx="1.8"/>
+    <rect x="28" y="6" width="8" height="12" rx="1.8" transform="rotate(45 32 32)"/>
+    <rect x="28" y="6" width="8" height="12" rx="1.8" transform="rotate(90 32 32)"/>
+    <rect x="28" y="6" width="8" height="12" rx="1.8" transform="rotate(135 32 32)"/>
+    <rect x="28" y="6" width="8" height="12" rx="1.8" transform="rotate(180 32 32)"/>
+    <rect x="28" y="6" width="8" height="12" rx="1.8" transform="rotate(225 32 32)"/>
+    <rect x="28" y="6" width="8" height="12" rx="1.8" transform="rotate(270 32 32)"/>
+    <rect x="28" y="6" width="8" height="12" rx="1.8" transform="rotate(315 32 32)"/>
+    <circle cx="32" cy="32" r="17"/>
+  </g>
+  <!-- the shadowed inner face, and the bore punched through it -->
+  <circle cx="32" cy="32" r="11" fill="#a8752c"/>
+  <circle cx="32" cy="32" r="5.5" fill="#1b1f24"/>
+</svg>
