@@ -23,6 +23,10 @@ import { buildReplay, poseAt, type Replay } from './replay';
 import { renderResults, shareText } from './results';
 import { startCountdown, type Countdown } from './countdown';
 import { FOOTER, HELP_HTML, ABOUT_HTML, renderHud, renderMenu, renderModal, renderTray } from './ui';
+import { makeDraggable } from './engine/drag';
+
+/** Lift a card up this far (px) to slot it. */
+const CARD_LIFT = 48;
 import type { Card, GameState, RoundResult } from './game';
 import { DEFAULT_MODE, modeOf, type Mode } from './modes';
 import { createNet, type Net } from './engine/net';
@@ -451,9 +455,33 @@ function paintTray(): void {
     waiting: m.locked() !== null,
   });
 
-  host.querySelectorAll<HTMLButtonElement>('.card').forEach((b) =>
-    b.addEventListener('click', () => slotCard(Number(b.dataset.card))),
-  );
+  host.querySelectorAll<HTMLButtonElement>('.card').forEach((b) => {
+    const idx = Number(b.dataset.card);
+    // Tap still slots a card, but you can also LIFT it up into the program —
+    // drag it up toward the slots (or flick up) and let go. Horizontal stays
+    // with the browser (pan-x) so a long hand still scrolls.
+    const reset = (): void => {
+      b.classList.remove('is-dragging', 'will-play');
+      b.style.transform = '';
+    };
+    makeDraggable(b, {
+      onTap: () => slotCard(idx),
+      onDragStart: () => b.classList.add('is-dragging'),
+      onDragMove: (_dx, dy) => {
+        b.style.transform = `translateY(${Math.min(0, dy)}px)`;
+        b.classList.toggle('will-play', dy < -CARD_LIFT);
+      },
+      onDrop: (_dx, dy) => {
+        reset();
+        if (dy < -CARD_LIFT) slotCard(idx);
+      },
+      onSwipe: (dir) => {
+        reset();
+        if (dir === 'up') slotCard(idx);
+      },
+      onCancel: reset,
+    });
+  });
   host.querySelectorAll<HTMLButtonElement>('.slot').forEach((b) =>
     b.addEventListener('click', () => clearSlot(Number(b.dataset.slot))),
   );

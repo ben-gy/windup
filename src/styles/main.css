@@ -688,10 +688,27 @@ canvas.board {
   justify-content: center;
   gap: 2px;
   padding: 4px;
+  /* pan-x keeps horizontal scrolling of a long hand with the browser; the
+     UPWARD pull (drag/flick a card up into the program) is ours. */
+  touch-action: pan-x;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .card:hover:not(:disabled) {
   border-color: var(--brass);
   transform: translateY(-2px);
+}
+
+/* Following the finger — no transition (that would lag), lifted above the row.
+   Removing it on release lets the snap-back animate. */
+.card.is-dragging {
+  transition: none;
+  z-index: 10;
+  box-shadow: 0 14px 30px rgb(0 0 0 / 0.45);
+}
+/* Pulled up far enough that letting go will slot it. */
+.card.will-play {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 2px var(--brass), 0 16px 32px rgb(0 0 0 / 0.4);
 }
 .card.spent {
   opacity: 0.28;

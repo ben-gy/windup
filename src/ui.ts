@@ -94,7 +94,7 @@ export const HELP_HTML = `
   <p class="help-controls">
     <strong>Desktop:</strong> click a card, or press <kbd>1</kbd>–<kbd>6</kbd> to slot it,
     <kbd>Backspace</kbd> to undo, <kbd>Enter</kbd> to lock in.<br />
-    <strong>Mobile:</strong> tap a card to slot it, tap a slot to clear it.
+    <strong>Mobile:</strong> tap a card — or lift it up into the program — to slot it; tap a slot to clear it.
   </p>
   <p class="help-tip">The dashed line shows where your program takes you — <em>if nobody touches you</em>.</p>`;
 
