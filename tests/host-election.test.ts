@@ -22,7 +22,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Net } from '../src/engine/net';
+import type { Net } from '@ben-gy/game-engine/net';
 
 interface Wire {
   peers: Map<string, Room>;
@@ -109,7 +109,7 @@ async function peer(id: string, opts: { claimHost?: boolean } = {}): Promise<Net
       return room;
     },
   }));
-  const mod = await import('../src/engine/net');
+  const mod = await import('@ben-gy/game-engine/net');
   return mod.createNet({ appId: 'windup', roomId: 'R', claimHost: opts.claimHost });
 }
 
@@ -186,13 +186,22 @@ describe('host election — nobody hosts a mesh that has not formed', () => {
     connect('a', 'b');
     // Neither claimed (both arrived via a link into an empty room). They must
     // not deadlock waiting for an incumbent that does not exist.
-    vi.advanceTimersByTime(2600);
+    //
+    // The window is SETTLE_MS, and it is now 6s rather than 2.5s. That is the
+    // point of the fix, not an inconvenience to route around: Nostr discovery
+    // plus ICE on a phone routinely takes longer than 2.5s, so the old window
+    // expired while a healthy host's announce was still in flight, and the
+    // joiner elected itself — the first half of the room-stealing bug.
+    vi.advanceTimersByTime(6100);
     expect(a.isHost()).toBe(true); // min-id, agreed by both
     expect(b.isHost()).toBe(false);
     expect(b.host()).toBe('a');
+    // Minted at the LOWEST possible term, so it can never outrank a real
+    // incumbent this peer simply had not heard from yet.
+    expect(a.hostEpoch()).toBe(1);
   });
 
-  it('settles the creator immediately so "Create a room" is not a 2.5s wait', async () => {
+  it('settles the creator immediately so "Create a room" is not a 6s wait', async () => {
     const host = await peer('z', { claimHost: true });
     expect(host.hostSettled()).toBe(true);
     expect(host.isHost()).toBe(true);

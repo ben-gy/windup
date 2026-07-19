@@ -26,7 +26,7 @@ import {
   type Facing,
   type GameState,
 } from './game';
-import { makeRng, type Rng } from './engine/rng';
+import { makeRng, type Rng } from '@ben-gy/game-engine/rng';
 import type { Mode } from './modes';
 
 export type Skill = 'easy' | 'normal' | 'hard';

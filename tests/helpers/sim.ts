@@ -18,7 +18,7 @@ import {
   type Card,
   type GameState,
 } from '../../src/game';
-import { makeRng } from '../../src/engine/rng';
+import { makeRng } from '@ben-gy/game-engine/rng';
 import type { Mode } from '../../src/modes';
 
 export interface MatchResult {

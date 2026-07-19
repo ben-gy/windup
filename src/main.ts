@@ -6,7 +6,8 @@
  *  - ONE Net per room visit, created when the player enters a room and torn down
  *    only on the way back to the menu. Rounds are versioned INSIDE it by
  *    rematch.ts. There is no leave/rejoin anywhere in this file, and there must
- *    never be — see engine/net.ts for the two-shipped-games story behind that.
+ *    never be — see @ben-gy/game-engine/net for the two-shipped-games story
+ *    behind that.
  *  - `?room=` is honoured exactly once and cleared on the way out, so a reload
  *    or a home-screen icon never drags you back into a room you left.
  *  - The lobby and the results screen are two views of the same rematch
@@ -28,14 +29,15 @@ import { buildReplay, poseAt, type Replay } from './replay';
 import { renderResults, shareText } from './results';
 import { startCountdown, type Countdown } from './countdown';
 import { FOOTER, HELP_HTML, ABOUT_HTML, renderHud, renderMenu, renderModal, renderTray } from './ui';
-import { makeDraggable } from './engine/drag';
+import { makeDraggable } from '@ben-gy/game-engine/drag';
 
 /** Lift a card up this far (px) to slot it. */
 const CARD_LIFT = 48;
 import type { Card, GameState, RoundResult } from './game';
 import { DEFAULT_MODE, modeOf, type Mode } from './modes';
-import { createNet, type Net } from './engine/net';
-import { createRounds, type Rounds } from './engine/rematch';
+import { createNet, roomAppId, setTurnConfig, type Net } from '@ben-gy/game-engine/net';
+import { getTurnConfig } from '@ben-gy/game-engine/turn';
+import { createRounds, type Rounds } from '@ben-gy/game-engine/rematch';
 import {
   clearRoomInUrl,
   createLobby,
@@ -43,14 +45,41 @@ import {
   inviteLink,
   normalizeRoomCode,
   setRoomInUrl,
-} from './engine/lobby';
-import { createSfx } from './engine/sound';
-import { createStore } from './engine/storage';
-import { resolveName } from './engine/identity';
-import { hardenViewport } from './engine/mobile';
+} from '@ben-gy/game-engine/lobby';
+import { createSfx } from '@ben-gy/game-engine/sound';
+import { createStore } from '@ben-gy/game-engine/storage';
+import { resolveName } from '@ben-gy/game-engine/identity';
+import { hardenViewport } from '@ben-gy/game-engine/mobile';
+
+const SLUG = 'windup';
+
+/**
+ * The signaling namespace. NEVER the bare slug: roomAppId folds the engine's
+ * protocol revision into it, so a player still running a cached pre-migration
+ * build lands in a room where they simply see nobody, rather than half-joining
+ * a live mesh and speaking a protocol the others no longer answer.
+ */
+const ROOM_APP_ID = roomAppId(SLUG);
+
+/**
+ * TURN credentials, fetched ONCE at boot rather than lazily on the join path.
+ *
+ * Trystero pre-builds a single global pool of peer connections from the config
+ * of whichever joinRoom fires first on the page, and every later room draws its
+ * OUTBOUND offers from that pool. A turnConfig that arrives after the first mesh
+ * therefore leaves the initiating half of every pair STUN-only — TURN working in
+ * one direction for roughly half of all pairs, which is far harder to diagnose
+ * than having none at all. On carrier CGNAT, STUN-only is simply "the other
+ * player never appears".
+ *
+ * So the fetch starts here, at module scope, and enterRoom() awaits it before
+ * the first createNet. getTurnConfig() is session-cached and fails open to an
+ * empty list, so this can never block or break a join.
+ */
+const turnReady: Promise<void> = getTurnConfig().then(setTurnConfig);
 
 const app = document.getElementById('app')!;
-const store = createStore('windup');
+const store = createStore(SLUG);
 const sfx = createSfx(store.get('muted', false));
 const fx = createFx();
 
@@ -195,7 +224,7 @@ function showRoomEntry(): void {
     container: host,
     title: 'Play with friends',
     subtitle: 'Start a room and share the code, or type a friend’s code to join. 2–4 players.',
-    onSubmit: (code, created) => enterRoom(code, created),
+    onSubmit: (code, created) => void enterRoom(code, created),
     onCancel: () => showMenu(),
   });
 }
@@ -205,12 +234,18 @@ function showRoomEntry(): void {
  * `claimHost` is true only for the peer that minted the code — a typed code, a
  * link or a deep link joins as a guest, or two peers race to host one room.
  */
-function enterRoom(code: string, created: boolean): void {
+async function enterRoom(code: string, created: boolean): Promise<void> {
   roomCode = normalizeRoomCode(code);
   setRoomInUrl(roomCode);
 
+  // The FIRST mesh on the page must already carry TURN — see `turnReady`. This
+  // resolves instantly on every visit after the first (the credentials are
+  // session-cached) and resolves to nothing rather than rejecting if the TURN
+  // service is down, so no join is ever gated on it succeeding.
+  await turnReady;
+
   net = createNet(
-    { appId: 'windup', roomId: roomCode, claimHost: created },
+    { appId: ROOM_APP_ID, roomId: roomCode, claimHost: created },
     {
       // Host transfer: the promoted peer takes over the authoritative clock.
       // Without this wiring the survivor's board simply freezes — the exact
@@ -245,6 +280,15 @@ function enterRoom(code: string, created: boolean): void {
     // mode that changes board size would have them playing different games.
     roundOpts: () => ({ mode: mode.id }),
     onRound: (info) => {
+      // We are not in the frozen roster: this round started without us, because
+      // we connected mid-round or our vote never reached the host. Building a
+      // match here would deal us a seat nobody else has and paint a board that
+      // is not the room's — which is precisely what "I got ejected" looked like
+      // from the player's side. Stay on the lobby instead: the engine renders
+      // the round-in-progress state with the ready toggle live, so we are queued
+      // for the next one without having to notice anything.
+      if (!info.seated) return;
+
       const opts = (info.opts ?? {}) as { mode?: unknown };
       const roundMode = modeOf(opts.mode);
       const seats: Seat[] = info.players.map((p) => ({ id: p.id, name: p.name, bot: null }));
@@ -848,7 +892,7 @@ function boot(): void {
     // Consume the invite once. Joining by link is never a host claim.
     const code = normalizeRoomCode(deepLinkRoom);
     deepLinkRoom = null;
-    enterRoom(code, false);
+    void enterRoom(code, false);
     return;
   }
 

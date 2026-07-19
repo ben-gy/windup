@@ -19,7 +19,7 @@
  * a seat can be lucky about.
  */
 
-import { makeRng, type Rng } from './engine/rng';
+import { makeRng, type Rng } from '@ben-gy/game-engine/rng';
 import type { Mode } from './modes';
 
 // ── types ───────────────────────────────────────────────────────────────────
