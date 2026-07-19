@@ -14,7 +14,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { hashSeed, makeRng, pick, randInt, shuffle } from '../src/engine/rng';
+import { hashSeed, makeRng, pick, randInt, shuffle } from '@ben-gy/game-engine/rng';
 import {
   ALL_CARDS,
   createGame,

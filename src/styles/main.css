@@ -456,9 +456,22 @@ kbd {
 .lobby-flash.show {
   opacity: 1;
 }
-.lobby-note {
-  color: var(--ink-dim);
-  font-size: 0.85rem;
+/* Two states the engine lobby paints that this game had no markup for before:
+   the explicit "host this room" offer to a player who minted a code and has sat
+   alone past the settle window, and the spectator view for a peer whose round
+   started without it. Both stack a button under the message, so they need the
+   row to wrap rather than squeeze the text to nothing. */
+.lobby-searching.lobby-offer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  text-align: center;
+}
+.lobby-searching.lobby-offer .lobby-btn {
+  margin: 0;
+}
+.lobby-spectating .lobby-searching {
+  justify-content: center;
 }
 
 /* An animated spinner, never a static "waiting…" — a WebRTC handshake takes a

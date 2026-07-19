@@ -27,7 +27,7 @@ import {
   type GameState,
   type RoundResult,
 } from './game';
-import { makeRng } from './engine/rng';
+import { makeRng } from '@ben-gy/game-engine/rng';
 import { modeOf, type Mode } from './modes';
 
 export interface Seat {
