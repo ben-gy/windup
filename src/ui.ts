@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Ben Richardson — https://benrichardson.dev
+// Additional terms under AGPL-3.0 section 7(b) apply; see ADDITIONAL-TERMS.md.
 /**
  * ui.ts — every screen that is not the arena: menu, help, about, HUD, the card
  * tray. DOM rather than canvas, so text is crisp, tap targets are real and the
